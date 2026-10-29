@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Support KPI Calculator</title>
+<meta name="description" content="Staffing, SLA and real containment for a support desk with an AI assistant. Erlang C in the browser. By Meruyert Nurkaliyeva.">
+<meta property="og:title" content="Support KPI and staffing calculator">
+<meta property="og:description" content="How many agents you need for your SLA once the bot takes its share, and how much of that share is actually solved.">
+<meta name="theme-color" content="#07101f">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#07101f;--bg-glow:#10294a;--surface:#0e2138;--surface-2:#0b1a2e;--surface-3:#142b4b;--line:#1e3a5c;--line-strong:#2d4f78;--ink:#f4f7fb;--ink-2:#c9d5e3;--muted:#9fb0c4;--gold:#d4a537;--on-gold:#10243d;--ok:#3ecf8e;--warn:#e8b04b;--bad:#eb7d7d;--info:#4f9fe8;--focus:#f0c75e;
+--f-display:"Archivo","Helvetica Neue",Arial,sans-serif;--f-body:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+--gutter:clamp(16px,4vw,40px);--radius:6px;--maxw:1120px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg) radial-gradient(1200px 600px at 80% -10%,var(--bg-glow),transparent 60%) no-repeat;color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;overflow-x:hidden}
+a{color:var(--gold);text-underline-offset:3px}
+a:hover{color:var(--focus)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter)}
+header.top{position:sticky;top:0;z-index:10;background:rgba(7,16,31,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:56px}
+.brand{font-family:var(--f-display);font-weight:700;color:var(--ink);text-decoration:none;letter-spacing:.01em;white-space:nowrap}
+.brand span{color:var(--gold)}
+nav.links{display:flex;gap:18px;overflow-x:auto;scrollbar-width:none}
+nav.links::-webkit-scrollbar{display:none}
+nav.links a{color:var(--ink-2);text-decoration:none;font-size:.875rem;white-space:nowrap}
+nav.links a:hover{color:var(--gold)}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:0 0 10px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;margin:0 0 12px}
+h1{font-size:clamp(2.2rem,1.4rem + 3.6vw,3.8rem);letter-spacing:-.01em}
+h2{font-size:clamp(1.5rem,1.1rem + 1.6vw,2.1rem)}
+h3{font-size:1.125rem}
+p{margin:0 0 14px}
+.lead{font-size:1.15rem;color:var(--ink-2);max-width:62ch}
+.muted{color:var(--muted)}
+section{padding:56px 0;border-top:1px solid var(--line)}
+section.hero{border-top:0;padding:64px 0 48px}
+.why{border-left:3px solid var(--gold);background:var(--surface-2);padding:12px 16px;border-radius:0 var(--radius) var(--radius) 0;color:var(--ink-2);max-width:72ch;margin:18px 0 24px}
+.why b{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.12em;color:var(--gold);display:block;margin-bottom:2px}
+.btn{display:inline-flex;align-items:center;gap:8px;font:600 .95rem var(--f-body);padding:11px 18px;border-radius:var(--radius);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;min-height:44px}
+.btn:hover{border-color:var(--gold);color:var(--ink)}
+.btn.primary{background:var(--gold);border-color:var(--gold);color:var(--on-gold)}
+.btn.primary:hover{background:var(--focus);color:var(--on-gold)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;padding:3px 8px;border-radius:4px;border:1px solid var(--line-strong);color:var(--ink-2);text-transform:uppercase}
+.tag.ok{color:var(--ok);border-color:rgba(62,207,142,.45)}
+.tag.warn{color:var(--warn);border-color:rgba(232,176,75,.45)}
+.tag.bad{color:var(--bad);border-color:rgba(235,125,125,.45)}
+.tag.info{color:var(--info);border-color:rgba(79,159,232,.45)}
+label{display:block;font-size:.875rem;color:var(--ink-2);margin:0 0 6px}
+input,select,textarea{width:100%;font:1rem var(--f-body);color:var(--ink);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:var(--radius-sm,4px);padding:10px 12px;min-height:44px}
+textarea{min-height:84px;resize:vertical}
+.field{margin-bottom:14px}
+.hint{font-size:.8rem;color:var(--muted);margin-top:4px}
+code,.mono{font-family:var(--f-mono);font-size:.9em}
+footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);font-size:.875rem}
+footer a{color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+
+.calc{display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:960px){.calc{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}}
+fieldset{border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 4px;margin:0 0 16px;background:var(--surface)}
+legend{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);padding:0 6px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:420px){.two{grid-template-columns:1fr}}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.kpi .k{font-size:.8rem;color:var(--muted)}
+.kpi .v{font-family:var(--f-display);font-weight:800;font-size:1.9rem;line-height:1.1;margin:4px 0}
+.kpi .s{font-size:.8rem;color:var(--ink-2)}
+.kpi.alert{border-color:var(--warn)}
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.bar{display:flex;height:34px;border-radius:4px;overflow:hidden;margin:10px 0 8px;border:1px solid var(--line)}
+.bar div{height:100%;min-width:2px}
+.keys{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--ink-2)}
+.keys i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;color:var(--muted);font-weight:500;text-transform:uppercase}
+tr.pick td{background:rgba(212,165,55,.12);color:var(--ink)}
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:6px 6px 0}
+.warns{display:grid;gap:8px;margin-top:16px}
+.w{border-left:3px solid var(--warn);background:var(--surface-2);padding:10px 14px;font-size:.92rem;color:var(--ink-2)}
+.w.good{border-color:var(--ok)}
+.notes{display:grid;gap:14px}
+.notes h3{margin-bottom:4px}
+.notes p{color:var(--ink-2);margin:0}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+<a class="brand" href="https://mika-dulata.github.io/">Meruyert <span>Nurkaliyeva</span></a>
+<nav class="links"><a href="#calc">Calculator</a><a href="#how">How it works</a><a href="#about">About</a></nav>
+</div></header>
+<main>
+<section class="hero"><div class="wrap">
+<p class="eyebrow">Support planning · runs in your browser</p>
+<h1>How many agents do you actually need?</h1>
+<p class="lead">Add an AI assistant and the headcount question changes. The bot takes a share of conversations, but some of what it "contains" comes back a day later as a new ticket. This calculator puts that back into the numbers.</p>
+<p class="muted">Erlang C staffing for the human queue, real containment next to reported containment, and cost per verified resolution. Defaults are illustrative, not from any company.</p>
+</div></section>
+
+<section id="calc"><div class="wrap">
+<div class="calc">
+<form id="f" autocomplete="off">
+ <fieldset><legend>Demand at peak hour</legend>
+  <div class="two">
+   <div class="field"><label for="vol">Conversations per hour</label><input id="vol" type="number" min="1" step="1" value="240"></div>
+   <div class="field"><label for="aht">Handle time, minutes</label><input id="aht" type="number" min="0.5" step="0.5" value="9"><div class="hint">Per conversation, human agent</div></div>
+  </div>
+  <div class="field"><label for="conc">Chats an agent runs at once</label><input id="conc" type="number" min="1" max="5" step="0.5" value="2"><div class="hint">1 for phone or email. Treated as a simple divisor, which is optimistic.</div></div>
+ </fieldset>
+ <fieldset><legend>Service level target</legend>
+  <div class="two">
+   <div class="field"><label for="slp">% answered within</label><input id="slp" type="number" min="50" max="99" step="1" value="80"></div>
+   <div class="field"><label for="slt">Seconds</label><input id="slt" type="number" min="5" step="5" value="60"></div>
+  </div>
+  <div class="field"><label for="shr">Shrinkage, %</label><input id="shr" type="number" min="0" max="60" step="1" value="30"><div class="hint">Breaks, training, meetings, sick days</div></div>
+ </fieldset>
+ <fieldset><legend>AI assistant</legend>
+  <div class="two">
+   <div class="field"><label for="cont">Reported containment, %</label><input id="cont" type="number" min="0" max="95" step="1" value="60"><div class="hint">Closed without a human</div></div>
+   <div class="field"><label for="ver">Of those, verified solved, %</label><input id="ver" type="number" min="0" max="100" step="1" value="70"><div class="hint">User confirmed, or no repeat in 7 days</div></div>
+  </div>
+  <div class="field"><label for="ret">Unsolved ones that come back, %</label><input id="ret" type="number" min="0" max="100" step="5" value="60"><div class="hint">The rest give up, or go somewhere less safe</div></div>
+ </fieldset>
+ <fieldset><legend>Cost</legend>
+  <div class="two">
+   <div class="field"><label for="cph">Agent cost per hour</label><input id="cph" type="number" min="0" step="0.5" value="12"></div>
+   <div class="field"><label for="cai">AI cost per conversation</label><input id="cai" type="number" min="0" step="0.01" value="0.40"></div>
+  </div>
+ </fieldset>
+ <div class="row"><button class="btn" type="button" id="noai">Compare: no bot</button><button class="btn" type="button" id="def">Reset defaults</button></div>
+</form>
+
+<div aria-live="polite">
+ <div class="kpis">
+  <div class="kpi"><div class="k">Agents on shift</div><div class="v" id="o-n">0</div><div class="s" id="o-n2"></div></div>
+  <div class="kpi"><div class="k">Headcount with shrinkage</div><div class="v" id="o-hc">0</div><div class="s">people scheduled for the peak hour</div></div>
+  <div class="kpi"><div class="k">Expected service level</div><div class="v" id="o-sl">0</div><div class="s" id="o-asa"></div></div>
+  <div class="kpi" id="k-real"><div class="k">Real containment</div><div class="v" id="o-real">0</div><div class="s" id="o-real2"></div></div>
+  <div class="kpi"><div class="k">Cost per verified resolution</div><div class="v" id="o-cpr">0</div><div class="s" id="o-cpr2"></div></div>
+  <div class="kpi"><div class="k">Agent occupancy</div><div class="v" id="o-occ">0</div><div class="s">time busy with conversations</div></div>
+ </div>
+ <div class="flow">
+  <p class="eyebrow" style="margin:0">Where 100 conversations end up</p>
+  <div class="bar" id="bar"></div>
+  <div class="keys" id="keys"></div>
+ </div>
+ <div class="tbl"><table><thead><tr><th>Agents</th><th>Service level</th><th>Avg wait</th><th>Occupancy</th></tr></thead><tbody id="tb"></tbody></table></div>
+ <div class="warns" id="warns"></div>
+</div>
+</div>
+</div></section>
+
+<section id="how"><div class="wrap">
+<p class="eyebrow">How it works</p>
+<h2>The model, in plain words</h2>
+<div class="notes grid g2">
+ <div class="card"><h3>Human queue</h3><p>Conversations the bot hands over, plus the "contained" ones that weren't solved and come back. That second group is the one most dashboards forget.</p></div>
+ <div class="card"><h3>Erlang C</h3><p>The standard queueing formula for contact centres. Given arrivals, handle time and agents, it estimates the share answered within your target. It assumes nobody hangs up while waiting, so it is a little pessimistic on wait and optimistic on nothing else.</p></div>
+ <div class="card"><h3>Real containment</h3><p>Reported containment times the verified solved rate. If the bot "contains" 60% and 70% of that is solved, the bot really resolves 42%. That's the number to put in front of leadership.</p></div>
+ <div class="card"><h3>Cost per verified resolution</h3><p>Agent hours plus AI usage, divided by problems actually solved. Conversations handled by a person are counted as 95% solved. Divide by closed conversations instead and automation always looks cheaper than it is.</p></div>
+ <div class="card"><h3>Concurrency</h3><p>Two chats at once does not mean double speed. Here it's a plain divisor of handle time, which flatters chat. For security or complaint queues, set it to 1.</p></div>
+ <div class="card"><h3>What it leaves out</h3><p>Abandonment, skills routing, languages, time zones and P1 queues. A security queue should be sized on its own, from handoff volume by hour, not from the average.</p></div>
+</div>
+</div></section>
+
+<section id="about"><div class="wrap">
+<p class="eyebrow">About</p>
+<h2>Meruyert Nurkaliyeva</h2>
+<p class="lead">Head of Customer Support at a licensed crypto exchange and custody business, ex-Binance. I built this because "the bot handles 60%" kept coming up in planning, and nobody asked how much of that 60% came back.</p>
+<div class="row"><a class="btn" href="https://mika-dulata.github.io/">Personal page</a><a class="btn" href="https://mika-dulata.github.io/support-handoff-playbook/">Handoff playbook</a><a class="btn" href="https://mika-dulata.github.io/support-lab/">Support lab</a><a class="btn" href="https://www.linkedin.com/in/meruyert-nurkaliyeva">LinkedIn</a></div>
+</div></section>
+</main>
+<footer><div class="wrap">Illustrative defaults only. MIT licensed. <a href="https://github.com/mika-dulata/support-kpi-calculator">Source on GitHub</a></div></footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const IDS=['vol','aht','conc','slp','slt','shr','cont','ver','ret','cph','cai'];
+const DEF={};IDS.forEach(k=>DEF[k]=$(k).value);
+const num=k=>{const x=parseFloat($(k).value);return isFinite(x)?x:0;};
+const pct=x=>(x*100).toFixed(x>=0.995||x<0.005?0:1).replace(/\.0$/,'')+'%';
+function erlangC(A,N){if(N<=A)return 1;let s=1,t=1;for(let k=1;k<N;k++){t*=A/k;s+=t;}const tn=t*A/N;const top=tn*N/(N-A);return top/(s+top);}
+function sl(A,N,T,AHT){if(N<=A)return 0;return 1-erlangC(A,N)*Math.exp(-(N-A)*T/AHT);}
+function asa(A,N,AHT){if(N<=A)return Infinity;return erlangC(A,N)*AHT/(N-A);}
+function fmtSec(s){if(!isFinite(s))return 'grows without limit';if(s<60)return Math.round(s)+' s';return (s/60).toFixed(1)+' min';}
+function calc(){
+ const vol=Math.max(1,num('vol')),ahtS=Math.max(30,num('aht')*60),conc=Math.min(5,Math.max(1,num('conc')));
+ const target=Math.min(.99,Math.max(.5,num('slp')/100)),T=Math.max(1,num('slt')),shr=Math.min(.6,Math.max(0,num('shr')/100));
+ const cont=Math.min(.95,Math.max(0,num('cont')/100)),ver=Math.min(1,Math.max(0,num('ver')/100)),ret=Math.min(1,Math.max(0,num('ret')/100));
+ const cph=Math.max(0,num('cph')),cai=Math.max(0,num('cai'));
+ const contained=vol*cont,solved=contained*ver,unsolved=contained-solved,back=unsolved*ret,lost=unsolved-back,handed=vol-contained;
+ const human=handed+back;
+ const effAht=ahtS/conc;const A=human*effAht/3600;
+ let N=Math.max(1,Math.floor(A)+1);while(sl(A,N,T,effAht)<target&&N<2000)N++;
+ const s=sl(A,N,T,effAht),w=asa(A,N,effAht),occ=A/N,hc=Math.ceil(N/(1-shr));
+ const humanSolved=human*0.95;const verified=solved+humanSolved;
+ const cost=hc*cph+vol*cai;const cpr=verified>0?cost/verified:0;
+ $('o-n').textContent=N;$('o-n2').textContent=`for ${Math.round(human)} human conversations an hour`;
+ $('o-hc').textContent=hc;$('o-sl').textContent=pct(s);$('o-asa').textContent=`average wait ${fmtSec(w)}`;
+ $('o-real').textContent=pct(cont*ver);$('o-real2').textContent=`reported: ${pct(cont)}`;
+ $('k-real').classList.toggle('alert',cont-cont*ver>0.15);
+ $('o-cpr').textContent=cpr.toFixed(2);$('o-cpr2').textContent=`same currency as your inputs · ${Math.round(verified)} solved per hour`;
+ $('o-occ').textContent=pct(occ);
+ const parts=[['Bot, solved',solved,'var(--ok)'],['Bot, came back',back,'var(--warn)'],['Bot, gave up',lost,'var(--bad)'],['Handed to a person',handed,'var(--info)']];
+ $('bar').innerHTML=parts.map(p=>`<div style="width:${p[1]/vol*100}%;background:${p[2]}" title="${p[0]}"></div>`).join('');
+ $('keys').innerHTML=parts.map(p=>`<span><i style="background:${p[2]}"></i>${p[0]} ${Math.round(p[1]/vol*100)}</span>`).join('');
+ let rows='';for(let n=Math.max(Math.floor(A)+1,N-3);n<=N+3;n++){rows+=`<tr class="${n===N?'pick':''}"><td>${n}</td><td>${pct(sl(A,n,T,effAht))}</td><td>${fmtSec(asa(A,n,effAht))}</td><td>${pct(A/n)}</td></tr>`;}
+ $('tb').innerHTML=rows;
+ const W=[];
+ if(occ>0.88)W.push(['Occupancy above 88%. The numbers work on paper, but people burn out and quality drops. Plan one or two more.',0]);
+ if(cont-cont*ver>0.15)W.push([`The gap between reported and real containment is ${Math.round((cont-cont*ver)*100)} points. ${Math.round(lost)} people an hour leave without a fix and without telling you.`,0]);
+ if(back>handed*0.25)W.push([`${Math.round(back)} conversations an hour come back after the bot "contained" them. That's ${Math.round(back/human*100)}% of the human queue.`,0]);
+ if(conc>2)W.push(['More than two chats at once is fine for simple questions. Keep it at 1 for security, complaints and vulnerable users.',0]);
+ if(!W.length)W.push(['Nothing alarming with these inputs. Check the P1 security queue separately.',1]);
+ $('warns').innerHTML=W.map(x=>`<div class="w ${x[1]?'good':''}">${x[0]}</div>`).join('');
+}
+IDS.forEach(k=>$(k).addEventListener('input',calc));
+$('noai').onclick=()=>{$('cont').value=0;calc();};
+$('def').onclick=()=>{IDS.forEach(k=>$(k).value=DEF[k]);calc();};
+calc();
+</script>
+</body>
+</html>
